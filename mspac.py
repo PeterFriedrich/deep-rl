@@ -2,6 +2,9 @@
 Deep Reinforcement Learning to play Ms-Pacman
 """
 
+""" Credits: 
+    Much of this code is taken from Aurelion Geron's Hands on Machine learning repo"""
+
 """
 Notes:
 

@@ -6,4 +6,4 @@
 one to play a given model using a given checkpoint, and one for training models 
   - log actual results of testing, changing batch size, memory size, number of layers, time of training
 
-2. Set up and Lstm example
+2. Set up an Lstm example

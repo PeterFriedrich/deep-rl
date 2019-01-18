@@ -14,6 +14,8 @@ need to do more logging, efficiently
 add another layer  sometime?
 
 need proper data logging, save average score every 
+mess with memory size, batch size 
+increase learning rate, decrease momentum method?
 
 """
 

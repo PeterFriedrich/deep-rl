@@ -47,4 +47,8 @@ def plot_animation(frames, repeat=False, interval=40):
     patch = plt.imshow(frames[0])
     plt.axis('off')
     return animation.FuncAnimation(fig, update_scene, fargs=(frames, patch), frames=len(frames), repeat=repeat, interval=interval)
+    
+# setup function for opening a log file and saving it 
+
+# how to open and save the file in a different directory?
 

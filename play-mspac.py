@@ -43,6 +43,7 @@ def plot_animation(frames, repeat=False, interval=40):
     plt.axis('off')
     return animation.FuncAnimation(fig, update_scene, fargs=(frames, patch), frames=len(frames), repeat=repeat, interval=interval)
 
+
 # Environment 
 env = gym.make("MsPacman-v0")
 obs = env.reset()

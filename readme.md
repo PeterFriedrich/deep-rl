@@ -9,3 +9,5 @@ one to play a given model using a given checkpoint, and one for training models
   - mess with the tick and label sizes on the plots 
 
 2. Set up an Lstm example
+
+3. add in all old gym code

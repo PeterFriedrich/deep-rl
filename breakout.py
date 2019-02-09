@@ -46,18 +46,22 @@ def plot_animation(frames, repeat=False, interval=40):
     plt.axis('off')
     return animation.FuncAnimation(fig, update_scene, fargs=(frames, patch), frames=len(frames), repeat=repeat, interval=interval)
     
-# Preprocessing, multichannel merges 
-def preprocess_observation(obs):
-    img = obs[34:194:2, ::2] # crop and downsize
-    return np.mean(img, axis=2).reshape(80, 80) / 255.0
+""" ------------------------------------------------------------------------------- """    
     
-def combine_observations_multichannel(preprocessed_observations):
-    return np.array(preprocessed_observations).transpose([1, 2, 0])
-
 # Environment
 env = gym.make("Breakout-v0")
-obs = env.reset()
-
+obs = env.reset()    
+ 
+# Preprocessing, singlechannel merges 
+def preprocess_observation(obs):
+    img = obs[34:194:2, ::2] # crop and downsize
+    return np.mean(img, axis=2).reshape(80, 80, 1) / 255.0
+    
+def combine_observations_singlechannel(preprocessed_observations, dim_factor=0.5):
+    dimmed_observations = [obs * dim_factor**index
+                           for index, obs in enumerate(reversed(preprocessed_observations))]
+    return np.max(np.array(dimmed_observations), axis=0)
+    
 """ Build the convolutional net"""    
 input_height = 80
 input_width = 80
@@ -70,7 +74,7 @@ conv_activation = [tf.nn.relu] * 3
 n_hidden_in = 64 * 10 * 10  # conv3 has 64 maps of 10x10 each
 n_hidden = 512
 hidden_activation = tf.nn.relu
-n_outputs = env.action_space.n  # 9 discrete actions are available
+n_outputs = env.action_space.n  # 4 discrete actions are available
 initializer = tf.variance_scaling_initializer()
 
 def q_network(X_state, name):
@@ -97,8 +101,6 @@ def q_network(X_state, name):
     
 X_state = tf.placeholder(tf.float32, shape=[None, input_height, input_width,
                                             input_channels])
-                                            
-print("@@@@@@ state shape #####:",X_state.shape)
 
 online_q_values, online_vars = q_network(X_state, name="q_networks/online")
 target_q_values, target_vars = q_network(X_state, name="q_networks/target")
@@ -189,6 +191,12 @@ mean_max_q = 0.0
 pre_state = deque([], maxlen=3)
 pre_next = deque([], maxlen=3)
 
+# pre-setup first state 
+for i in range(3):
+    pre_state.append(preprocess_observation(obs))
+    pre_next.append(preprocess_observation(obs))
+state = combine_observations_singlechannel(pre_state)
+
 with tf.Session() as sess:
     writer = tf.summary.FileWriter('./graphs', sess.graph) # Tensorboard write to file 
     if os.path.isfile(checkpoint_path + ".index"):
@@ -211,17 +219,18 @@ with tf.Session() as sess:
             for i in range(3):
                 pre_state.append(preprocess_observation(obs))
                 pre_next.append(preprocess_observation(obs))
-            state = combine_observations_multichannel(pre_state)
+            state = combine_observations_singlechannel(pre_state)
             #state = preprocess_observation(obs)
 
         # Online DQN evaluates what to do
+        
         q_values = online_q_values.eval(feed_dict={X_state: [state]})
         action = epsilon_greedy(q_values, step)
 
         # Online DQN plays
         obs, reward, done, info = env.step(action)
         pre_next.append(preprocess_observation(obs))
-        next_state = combine_observations_multichannel(pre_state)
+        next_state = combine_observations_singlechannel(pre_state)
 
         # Let's memorize what happened
         replay_memory.append((state, action, reward, next_state, 1.0 - done))
@@ -267,7 +276,7 @@ with tf.Session() as sess:
     obs = env.reset()
     for step in range(n_max_steps):
         pre_state.append(preprocess_observation(obs))
-        state = combine_observations_multichannel(pre_state)
+        state = combine_observations_singlechannel(pre_state)
 
         # Online DQN evaluates what to do
         q_values = online_q_values.eval(feed_dict={X_state: [state]})
